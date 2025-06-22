@@ -1,0 +1,46 @@
+# AI Fragrance Generator - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core data processing
+pandas>=1.5.0
+numpy>=1.21.0
+
+# Machine learning and embeddings
+sentence-transformers>=2.2.0
+scikit-learn>=1.1.0
+torch>=1.12.0
+
+# Chemistry and molecular processing
+rdkit>=2022.9.1
+
+# Optional: Alternative RDKit installation if conda is preferred
+# Use: conda install -c conda-forge rdkit
+# rdkit-pypi>=2022.9.1  # Alternative pip installation
+
+# Web interface
+streamlit>=1.28.0
+plotly>=5.15.0
+
+# HTTP requests (for potential future API features)
+requests>=2.25.0
+
+# Development and testing (optional)
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Jupyter notebooks (optional, for development)
+jupyter>=1.0.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Progress bars and utilities
+tqdm>=4.64.0
+
+# JSON handling (usually included with Python)
+# json - built-in
+
+# File handling
+pathlib2>=2.3.0; python_version < "3.4"
+
+# Logging enhancements (optional)
+colorlog>=6.6.0
