@@ -10,6 +10,12 @@ from pathlib import Path
 
 # Import your fragrance generator
 from fragrance_generator import FragranceGenerator
+try:
+    from smiles_mapper import map_smiles_to_ingredient
+    SMILES_MAPPING_AVAILABLE = True
+except ImportError:
+    SMILES_MAPPING_AVAILABLE = False
+    print("⚠️ SMILES mapping not available - showing SMILES codes only")
 
 # Page configuration
 st.set_page_config(
@@ -250,7 +256,17 @@ def display_formula_results(result, unique_id="main"):
     
     # Detailed formula breakdown
     st.markdown("### 📋 Detailed Formula")
-    
+    st.markdown("""
+    <div style="background: #fef3c7; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #f59e0b;">
+    🧪 <strong>How to use this for real perfume:</strong><br>
+    • <strong>Ingredient Names</strong> = Actual fragrance materials you can buy<br>
+    • <strong>Odor Descriptions</strong> = How each ingredient smells (🌿 = natural character)<br>
+    • <strong>Source Type</strong> = Natural (essential oils) or Synthetic availability<br>
+    • <strong>Percentages</strong> = Exact blend ratios for your formula<br>
+    • <strong>Commercial Names</strong> = 💼 Where available from suppliers<br>
+    • <strong>SMILES</strong> = Click to see chemical structure (for advanced users)
+    </div>
+    """, unsafe_allow_html=True)
     
     # Group components by note position
     notes_data = {'top': [], 'middle': [], 'base': []}
@@ -279,28 +295,98 @@ def display_formula_results(result, unique_id="main"):
                 mw = component.get('molecular_weight', 0)
                 descriptors = component.get('matched_descriptors', [])
                 
-                # Create descriptor tags
-                descriptor_tags = ''.join([
-                    f'<span class="descriptor-tag">{desc}</span>' 
-                    for desc in descriptors[:4]
-                ])
-                
-                st.markdown(f"""
-                <div class="component-item">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong style="color: #1f2937; font-size: 1.1rem;">{percentage:.1f}%</strong>
-                            <span style="color: #6b7280; margin-left: 10px;">MW: {mw:.1f}</span>
+                # Map SMILES to actual ingredient if mapping is available
+                if SMILES_MAPPING_AVAILABLE:
+                    try:
+                        ingredient_info = map_smiles_to_ingredient(smiles, mw)
+                        ingredient_name = ingredient_info['name']
+                        odor_description = ingredient_info['odor_description']
+                        source_type = ingredient_info['source_type']
+                        commercial_name = ingredient_info.get('commercial_name')
+                        
+                        # Create descriptor tags
+                        descriptor_tags = ''.join([
+                            f'<span class="descriptor-tag">{desc}</span>' 
+                            for desc in descriptors[:3]  # Limit to 3 to make room for ingredient info
+                        ])
+                        
+                        # Add commercial name if available
+                        commercial_info = f"<br><small style='color: #059669;'>💼 {commercial_name}</small>" if commercial_name else ""
+                        
+                        st.markdown(f"""
+                        <div class="component-item">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                                        <strong style="color: #1f2937; font-size: 1.1rem;">{percentage:.1f}%</strong>
+                                        <span style="color: #6b7280; margin-left: 10px;">MW: {mw:.1f}</span>
+                                        <span style="color: #8b5cf6; margin-left: 10px; font-size: 0.8rem;">({source_type})</span>
+                                    </div>
+                                    <div style="margin-bottom: 5px;">
+                                        <strong style="color: #059669; font-size: 1rem;">{ingredient_name}</strong>
+                                        <br><em style="color: #6b7280; font-size: 0.9rem;">🌿 {odor_description}</em>
+                                        {commercial_info}
+                                    </div>
+                                    <div style="margin-top: 8px;">
+                                        {descriptor_tags}
+                                    </div>
+                                </div>
+                                <div style="font-family: monospace; color: #9ca3af; font-size: 0.7rem; margin-left: 15px; text-align: right;">
+                                    <details>
+                                        <summary style="cursor: pointer; color: #6b7280;">SMILES</summary>
+                                        <code style="font-size: 0.7rem; word-break: break-all;">{smiles}</code>
+                                    </details>
+                                </div>
+                            </div>
                         </div>
-                        <div style="font-family: monospace; color: #374151; font-size: 0.9rem;">
-                            {smiles}
+                        """, unsafe_allow_html=True)
+                        
+                    except Exception as e:
+                        # Fallback to original display if mapping fails
+                        descriptor_tags = ''.join([
+                            f'<span class="descriptor-tag">{desc}</span>' 
+                            for desc in descriptors[:4]
+                        ])
+                        
+                        st.markdown(f"""
+                        <div class="component-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong style="color: #1f2937; font-size: 1.1rem;">{percentage:.1f}%</strong>
+                                    <span style="color: #6b7280; margin-left: 10px;">MW: {mw:.1f}</span>
+                                </div>
+                                <div style="font-family: monospace; color: #374151; font-size: 0.9rem;">
+                                    {smiles}
+                                </div>
+                            </div>
+                            <div style="margin-top: 8px;">
+                                {descriptor_tags}
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    # Original display when mapping is not available
+                    descriptor_tags = ''.join([
+                        f'<span class="descriptor-tag">{desc}</span>' 
+                        for desc in descriptors[:4]
+                    ])
+                    
+                    st.markdown(f"""
+                    <div class="component-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong style="color: #1f2937; font-size: 1.1rem;">{percentage:.1f}%</strong>
+                                <span style="color: #6b7280; margin-left: 10px;">MW: {mw:.1f}</span>
+                            </div>
+                            <div style="font-family: monospace; color: #374151; font-size: 0.9rem;">
+                                {smiles}
+                            </div>
+                        </div>
+                        <div style="margin-top: 8px;">
+                            {descriptor_tags}
                         </div>
                     </div>
-                    <div style="margin-top: 8px;">
-                        {descriptor_tags}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
     
     # Selected descriptors
     text_analysis = result.get('text_analysis', {})
